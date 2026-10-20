@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML Preprocessing Tool</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app">
+
+  <!-- TOOLBAR -->
+  <header class="toolbar">
+    <span class="brand">ML Tool</span>
+    <div class="t-sep"></div>
+    <label class="btn" for="file-input">⬆ Upload CSV</label>
+    <input type="file" id="file-input" accept=".csv" onchange="handleUpload(event)">
+    <button class="btn" onclick="loadSample()">Load Sample</button>
+    <span id="file-label" class="file-label">no file loaded</span>
+    <div style="flex:1"></div>
+    <button class="btn tab-btn active" id="tab-upload"  onclick="showView('upload')">Upload</button>
+    <button class="btn tab-btn"        id="tab-data"    onclick="showView('data')">View Data</button>
+    <button class="btn tab-btn"        id="tab-results" onclick="showView('results')">Results</button>
+  </header>
+
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <section class="s-section">
+        <div class="s-title">Preprocessing</div>
+        <select id="preprocess-select" onchange="onPreprocessChange()">
+          <option value="">— select step —</option>
+          <option value="remove_missing">Remove rows with missing</option>
+          <option value="fill_mean">Fill missing → mean</option>
+          <option value="fill_median">Fill missing → median</option>
+          <option value="fill_mode">Fill missing → mode</option>
+          <option value="fill_zero">Fill missing → 0</option>
+          <option value="normalize_minmax">Normalize (min-max)</option>
+          <option value="normalize_zscore">Standardize (z-score)</option>
+          <option value="remove_duplicates">Remove duplicates</option>
+          <option value="drop_col">Drop column ▾</option>
+        </select>
+        <select id="col-select" class="hidden">
+          <option value="">— pick column —</option>
+        </select>
+        <button class="btn primary w100" onclick="applyPreprocess()">Apply</button>
+        <button class="btn danger  w100" onclick="resetData()">Reset Data</button>
+      </section>
+
+      <section class="s-section">
+        <div class="s-title">Learning Type</div>
+        <div class="mode-tabs">
+          <button class="mode-tab active-sup" id="tab-sup"   onclick="setMode('supervised')">Supervised</button>
+          <button class="mode-tab"            id="tab-unsup" onclick="setMode('unsupervised')">Unsupervised</button>
+        </div>
+      </section>
+
+      <section class="s-section">
+        <div class="s-title">Algorithm</div>
+        <select id="algo-select" onchange="if(typeof onAlgoChange === 'function') onAlgoChange()">
+          <option value="">— select algorithm —</option>
+        </select>
+
+        <div id="target-row" class="field-row">
+          <span class="f-label">Target</span>
+          <select id="target-col" onchange="refreshTable()">
+            <option value="">— select —</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <span class="f-label" id="k-label">k (knn)</span>
+          <input type="number" id="k-param" value="3" min="1" max="50" class="num-input">
+          <span class="f-label" id="folds-label">Folds</span>
+          <input type="number" id="cv-folds" value="5" min="2" max="20" class="num-input">
+        </div>
+
+        <div class="field-row hidden" id="clapp-params-row">
+          <span class="f-label" style="width: 32px;">σ</span>
+          <input type="number" id="clapp-sigma" value="0.5" step="0.1" min="0.1" class="num-input" style="flex:1;">
+          <span class="f-label" style="width: 35px;">Thresh</span>
+          <input type="number" id="clapp-thresh" value="0.64" step="0.01" min="0.1" max="1.0" class="num-input" style="flex:1;">
+        </div>
+
+        <button class="btn primary w100 run-btn" onclick="runAlgorithm()">▶ Run</button>
+      </section>
+
+
+
+      <section class="s-section">
+        <div class="s-title">Applied Steps</div>
+        <div id="steps-log" class="steps-log">none</div>
+      </section>
+
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- Upload view -->
+      <div id="view-upload" class="view-panel active">
+        <div class="drop-zone" id="drop-zone"
+          ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)"
+          onclick="document.getElementById('file-input').click()">
+          <div class="dz-icon">⬆</div>
+          <p class="dz-main">Drag &amp; drop a CSV file here, or click to browse</p>
+          <p class="dz-sub">Any file size supported · first row must be header</p>
+        </div>
+        <div id="col-tags-wrap" class="col-tags-wrap hidden">
+          <div class="s-title" style="margin-bottom:6px">Loaded Columns</div>
+          <div id="col-tags"></div>
+        </div>
+      </div>
+
+      <!-- Data view -->
+      <div id="view-data" class="view-panel">
+        <div id="stats-bar" class="stats-bar"></div>
+        <div id="table-wrap" class="table-wrap">
+          <p class="empty-hint">No dataset loaded</p>
+        </div>
+      </div>
+
+      <!-- Results view -->
+      <div id="view-results" class="view-panel">
+        <div class="results-hdr">
+          <span class="s-title">Results</span>
+          <button class="btn" onclick="clearResults()">Clear</button>
+        </div>
+        <div id="results-area"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="overlay" class="overlay hidden">
+    <div class="spinner"></div>
+    <span id="overlay-msg">Processing…</span>
+  </div>
+
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
